@@ -3,7 +3,16 @@
 import joblib
 import pandas as pd
 import streamlit as st
+import os
 
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+MODELS_DIR = os.path.join(
+    BASE_DIR,
+    "models"
+)
 from sklearn.metrics import (
     confusion_matrix,
     classification_report,
@@ -54,19 +63,34 @@ model_option = st.selectbox(
 model_files = {
 
     "Logistic Regression":
-    "models/logistic_regression_model.pkl",
+    os.path.join(
+        MODELS_DIR,
+        "logistic_regression_model.pkl"
+    ),
 
     "Decision Tree":
-    "models/decision_tree_model.pkl",
+    os.path.join(
+        MODELS_DIR,
+        "decision_tree_model.pkl"
+    ),
 
     "KNN":
-    "models/knn_model.pkl",
+    os.path.join(
+        MODELS_DIR,
+        "knn_model.pkl"
+    ),
 
     "Naive Bayes":
-    "models/naive_bayes_model.pkl",
+    os.path.join(
+        MODELS_DIR,
+        "naive_bayes_model.pkl"
+    ),
 
     "Random Forest":
-    "models/random_forest_model.pkl"
+    os.path.join(
+        MODELS_DIR,
+        "random_forest_model.pkl"
+    )
 }
 
 if uploaded_file:
@@ -75,10 +99,8 @@ if uploaded_file:
         uploaded_file
     )
 
-    # preprocess
-
-    df = preprocess_data(df)
-
+    # preprocess not needed
+    
     y_true = df["label"]
 
     X = df.drop(
@@ -87,7 +109,10 @@ if uploaded_file:
     )
 
     encoders = joblib.load(
-        "models/encoders.pkl"
+        os.path.join(
+            MODELS_DIR,
+            "encoders.pkl"
+        )
     )
 
     X = transform_data(
