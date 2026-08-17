@@ -1,49 +1,47 @@
-# Generated from: app.ipynb
-# Converted at: 2026-08-17T09:11:03.692Z
-# Next step (optional): refactor into modules & generate tests with RunCell
-# Quick start: pip install runcell
+# app.py
 
-import streamlit as st
+import joblib
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+import streamlit as st
 
-from dataset.data_preprocessing import (
-    load_training_data,
-    load_uploaded_test_data
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score
 )
 
-from models.logistic_regression import train_logistic as logistic_model
-from models.decision_tree import train_decision_tree as decision_model
-from models.knn_classifier import train_knn as knn_model
-from models.naive_bayes import train_naive_bayes as nb_model
-from models.random_forest import train_random_forest as rf_model
-
-from models.evaluation import evaluate_model
+from dataset.data_preprocessing import (
+    preprocess_data,
+    transform_data
+)
 
 st.set_page_config(
-    page_title="Credit Card Approval Classification",
+    page_title="Credit Card Approval",
     layout="wide"
 )
 
-st.title("Credit Card Approval Classification")
-
-st.write(
-    "Train models using Credit_card.csv and evaluate using uploaded test_data.csv"
+st.title(
+    "Credit Card Approval Prediction"
 )
 
-# Load Training Dataset
-X_train, y_train, scaler = load_training_data()
+# -------------------------
+# Upload Test Data
+# -------------------------
 
-# Upload Test Dataset
 uploaded_file = st.file_uploader(
     "Upload test_data.csv",
     type=["csv"]
 )
 
+# -------------------------
 # Model Selection
-model_name = st.selectbox(
-    "Select Classification Model",
+# -------------------------
+
+model_option = st.selectbox(
+    "Select Model",
     [
         "Logistic Regression",
         "Decision Tree",
@@ -53,99 +51,133 @@ model_name = st.selectbox(
     ]
 )
 
-# Train Selected Model
-if model_name == "Logistic Regression":
-    model = logistic_model(X_train, y_train)
+model_files = {
 
-elif model_name == "Decision Tree":
-    model = decision_model(X_train, y_train)
+    "Logistic Regression":
+    "models/logistic_regression_model.pkl",
 
-elif model_name == "KNN":
-    model = knn_model(X_train, y_train)
+    "Decision Tree":
+    "models/decision_tree_model.pkl",
 
-elif model_name == "Naive Bayes":
-    model = nb_model(X_train, y_train)
+    "KNN":
+    "models/knn_model.pkl",
 
-else:
-    model = rf_model(X_train, y_train)
+    "Naive Bayes":
+    "models/naive_bayes_model.pkl",
 
-# Evaluate on Uploaded Test Data
-if uploaded_file is not None:
+    "Random Forest":
+    "models/random_forest_model.pkl"
+}
 
-    test_df = pd.read_csv(uploaded_file)
+if uploaded_file:
 
-    st.subheader("Uploaded Test Dataset")
-
-    st.dataframe(test_df.head())
-
-    X_test, y_test = load_uploaded_test_data(
-        uploaded_file,
-        scaler
+    df = pd.read_csv(
+        uploaded_file
     )
 
-    metrics, cm, report = evaluate_model(
-        model,
-        X_test,
-        y_test
+    # preprocess
+
+    df = preprocess_data(df)
+
+    y_true = df["label"]
+
+    X = df.drop(
+        "label",
+        axis=1
     )
 
-    st.subheader("Evaluation Metrics")
-
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric(
-        "Accuracy",
-        f"{metrics['Accuracy']:.4f}"
+    encoders = joblib.load(
+        "models/encoders.pkl"
     )
 
-    col2.metric(
-        "AUC",
-        f"{metrics['AUC']:.4f}"
+    X = transform_data(
+        X,
+        encoders
     )
 
-    col3.metric(
-        "Precision",
-        f"{metrics['Precision']:.4f}"
+    model = joblib.load(
+        model_files[model_option]
     )
 
-    col1.metric(
-        "Recall",
-        f"{metrics['Recall']:.4f}"
+    predictions = model.predict(X)
+
+    # Metrics
+
+    st.subheader(
+        "Evaluation Metrics"
     )
 
-    col2.metric(
-        "F1 Score",
-        f"{metrics['F1 Score']:.4f}"
+    st.write(
+        "Accuracy:",
+        round(
+            accuracy_score(
+                y_true,
+                predictions
+            ),
+            4
+        )
     )
 
-    col3.metric(
-        "MCC",
-        f"{metrics['MCC']:.4f}"
+    st.write(
+        "Precision:",
+        round(
+            precision_score(
+                y_true,
+                predictions
+            ),
+            4
+        )
     )
 
-    st.subheader("Confusion Matrix")
-
-    fig, ax = plt.subplots(figsize=(6, 4))
-
-    sns.heatmap(
-        cm,
-        annot=True,
-        fmt="d",
-        cmap="Blues",
-        ax=ax
+    st.write(
+        "Recall:",
+        round(
+            recall_score(
+                y_true,
+                predictions
+            ),
+            4
+        )
     )
 
-    ax.set_xlabel("Predicted")
-    ax.set_ylabel("Actual")
+    st.write(
+        "F1 Score:",
+        round(
+            f1_score(
+                y_true,
+                predictions
+            ),
+            4
+        )
+    )
 
-    st.pyplot(fig)
+    # Confusion Matrix
 
-    st.subheader("Classification Report")
+    st.subheader(
+        "Confusion Matrix"
+    )
 
-    st.text(report)
+    cm = confusion_matrix(
+        y_true,
+        predictions
+    )
 
-else:
+    st.dataframe(cm)
 
-    st.info(
-        "Please upload test_data.csv to evaluate the selected model."
+    # Classification Report
+
+    st.subheader(
+        "Classification Report"
+    )
+
+    report = classification_report(
+        y_true,
+        predictions,
+        output_dict=True
+    )
+
+    st.dataframe(
+        pd.DataFrame(
+            report
+        ).transpose()
     )
