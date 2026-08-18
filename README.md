@@ -87,10 +87,10 @@ ML_Assignment_2/
 ```
 
 ## Github Repository Link Repository URL:
-URL :
+URL : https://github.com/2025ac05261/2025ac05261_ML_Assignment
 
 ## Streamlit Application Link
-URL :
+URL : https://2025ac05261mlassignment.streamlit.app/
 
 
 ## Machine Learning Models Implemented
@@ -139,14 +139,3 @@ Although Logistic Regression and Naïve Bayes reported relatively high accuracy 
 Therefore, Random Forest is the recommended model for this dataset, as it provides the best trade-off between overall accuracy, class discrimination, and reliable positive-class prediction.
 
 
-
-```python
-
-```
-
-
-
-
-```python
-
-```
